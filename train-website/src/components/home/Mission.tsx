@@ -200,21 +200,21 @@ export function Mission({
             </svg>
 
             {/*
-              Mobile — the same cycle, compact and vertical (§12).
+              Mobile — the stages, compact and vertical (§12).
 
-              The closing row matters: on desktop the circle shows the loop,
-              but a plain vertical list reads as four one-off steps, and D4
-              rests on the engine feeding *back* into Attract. It gets its own
-              row, connected by the rail down the dot column — previously it
-              was appended to the last stage's line and read as part of that
-              stage's label.
+              A "back to Attract" row previously closed the list, because a
+              flat list does not show that the stages form a cycle the way the
+              desktop circle does. Removed on client review. The loop is still
+              described in words by the aria-label on the wrapper, and the
+              desktop circle is unchanged, so only sighted mobile visitors
+              lose the cue.
             */}
             <ol
               className="relative flex flex-col gap-3 md:hidden"
               aria-hidden="true"
             >
-              {/* Vertical rail through the dot column, stopping at the return. */}
-              <span className="absolute bottom-3 left-1 top-2 w-px -translate-x-1/2 bg-train-red/30" />
+              {/* Vertical rail through the dot column. */}
+              <span className="absolute bottom-2 left-1 top-2 w-px -translate-x-1/2 bg-train-red/30" />
 
               {stages.map((stage) => (
                 <li key={stage.slug} className="relative flex items-center gap-4">
@@ -222,15 +222,6 @@ export function Mission({
                   <span className="type-eyebrow">{stage.name}</span>
                 </li>
               ))}
-
-              <li className="relative flex items-center gap-4 pt-1">
-                <span className="grid w-2 shrink-0 place-items-center text-train-red">
-                  ↻
-                </span>
-                <span className="type-eyebrow text-train-grey-700">
-                  Back to {stages[0]?.name}
-                </span>
-              </li>
             </ol>
           </div>
 
