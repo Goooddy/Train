@@ -1,0 +1,576 @@
+/* ============================================================================
+   TRAIN — design tokens and base layer
+   Spec: CLAUDE.md §4 (tokens), §11 (motion), §12 (responsive), §13 (a11y)
+
+   ---------------------------------------------------------------------------
+   COLOUR CONTRACT — approved pairings only. Nothing else ships.
+   ---------------------------------------------------------------------------
+   FOREGROUND      BACKGROUND    RATIO     USE
+   Black           Cream         17.5:1    Default body and headings
+   Cream           Black         17.5:1    Dark sections, hero
+   Cream           Red            5.9:1    Red emphasis blocks, primary button   [A5]
+   Yellow          Black         12.1:1    Accent text on dark only
+   Black           Yellow        12.1:1    Yellow highlight blocks
+   Grey-700        Cream          7.9:1    Secondary body text
+   Grey-300        Black         13.1:1    Body copy on dark surfaces            [A2]
+   Red             Cream          5.9:1    §02 emphasis line                     [A4]
+
+   FORBIDDEN — never author these:
+   - Yellow on cream ................ 1.5:1   (D9)
+   - Yellow on red .................. 4.1:1   (design decision, not a failure)
+   - Red on black ................... 2.4:1
+   - Grey-300 as text on cream ...... 1.3:1                                      [A2]
+
+   ---------------------------------------------------------------------------
+   AMENDMENTS — see CLAUDE.md §16. These override §4/§7/§13 where they differ.
+   ---------------------------------------------------------------------------
+   [A1] Focus ring is surface-aware. §13's blanket "2px yellow outline" is
+        1.5:1 on cream, below the 3:1 SC 1.4.11 requires. Ring now follows
+        --focus-ring, switched by [data-surface] on SectionShell.
+   [A2] The grey-300 ban is scoped to light surfaces. On black it is 13.1:1
+        and is the specified body colour in §7 §01 and §8 §07.
+   [A3] §04 capability numerals are aria-hidden decoration: grey-300 at rest
+        on cream, yellow on the black hover state. Red is dropped — it was
+        2.4:1 on black, which §4 itself forbids.
+   [A4] Red on cream added to the approved table (5.9:1) — §02 requires it.
+   [A5] Cream on red corrected from the stated 7.1:1 to the measured 5.9:1.
+
+   Ratios recomputed from these hex values with the WCAG 2.1 relative
+   luminance formula. Do not copy the figures from §4 — several were wrong.
+   ============================================================================ */
+
+@import "tailwindcss";
+/* Lenis needs these few rules to own the scroll container correctly. When Lenis
+   is destroyed under reduced motion the classes are removed and none apply. */
+@import "lenis/dist/lenis.css";
+
+/* ---------------------------------------------------------------------------
+   Brand tokens — §4. Authored exactly as the spec names them so the spec and
+   the stylesheet stay greppable against each other.
+   --------------------------------------------------------------------------- */
+:root {
+  --train-black: #0a0a0a;
+  --train-cream: #f4f1ea;
+  --train-red: #b3221e;
+  --train-yellow: #f5c518;
+  --train-grey-700: #4a4a4a;
+  --train-grey-300: #d6d2c8;
+
+  /* Focus ring — [A1]. Cream is the default surface, so black is the default
+     ring. SectionShell flips it on dark and red surfaces. */
+  --focus-ring: var(--train-black);
+
+  /* Layout — §4 spacing and grid, §12 breakpoints. */
+  --gutter: 20px;
+  --section-y: clamp(6rem, 12vh, 11rem);
+  --max-content: 1440px;
+
+  /* Fixed nav height, consumed by scroll-margin and the mobile rail. */
+  --nav-h: 72px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --gutter: 32px;
+  }
+}
+@media (min-width: 768px) {
+  :root {
+    --gutter: 40px;
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --gutter: 64px;
+    --nav-h: 88px;
+  }
+}
+@media (min-width: 1280px) {
+  :root {
+    --gutter: 80px;
+  }
+}
+
+[data-surface="black"],
+[data-surface="red"] {
+  /* [A1] — yellow on black 12.1:1, yellow on red 4.1:1. Both clear 3:1. */
+  --focus-ring: var(--train-yellow);
+}
+
+/* ---------------------------------------------------------------------------
+   Tailwind v4 theme mapping. `inline` makes the generated utilities reference
+   the custom properties above rather than copying their values, so :root
+   stays the single source of truth.
+   --------------------------------------------------------------------------- */
+@theme inline {
+  --color-train-black: var(--train-black);
+  --color-train-cream: var(--train-cream);
+  --color-train-red: var(--train-red);
+  --color-train-yellow: var(--train-yellow);
+  --color-train-grey-700: var(--train-grey-700);
+  --color-train-grey-300: var(--train-grey-300);
+
+  --font-display: var(--font-archivo);
+  --font-text: var(--font-montserrat);
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+
+   These MUST live in @layer base. Tailwind v4 puts every utility in
+   @layer utilities, and unlayered CSS outranks any layered CSS regardless of
+   specificity — so an unlayered `a { color: inherit }` silently beats every
+   `text-*` utility in the codebase. That is not a theoretical concern: it
+   rendered the §09 button as black text on black before this was layered.
+   --------------------------------------------------------------------------- */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Deliberately NOT scroll-behavior: smooth. Lenis owns smooth scrolling,
+       and as of Next 16 the framework no longer resets this during navigation,
+       so a global smooth would fight both Lenis and route changes. */
+  }
+
+  body {
+    margin: 0;
+    background: var(--train-cream);
+    color: var(--train-black);
+    font-family: var(--font-montserrat), system-ui, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    /* §12 — no horizontal overflow at any width. The full-bleed SVG diagrams
+       are the usual culprit; this is the backstop, not the fix. */
+    overflow-x: clip;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  figure {
+    margin: 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* §5 — fixed nav must not cover an anchored heading. */
+  [id] {
+    scroll-margin-top: 120px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Focus — §13, amended by [A1].
+
+   Deliberately UNLAYERED so it cannot be knocked out by a stray `outline-none`
+   utility. Never remove an outline without replacing it.
+   --------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------------------
+   Components — layered so utilities can still override them (e.g. `text-sm`
+   on a .type-body element).
+   --------------------------------------------------------------------------- */
+@layer components {
+/* Skip link — §13, first focusable element on every page. */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--train-black);
+  color: var(--train-cream);
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: translateY(-120%);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* ---------------------------------------------------------------------------
+   Type scale — §4. Headlines are authored sentence case in markup and
+   uppercased here, so screen readers do not spell them out letter by letter.
+   --------------------------------------------------------------------------- */
+.font-display {
+  font-family: var(--font-archivo), "Arial Black", system-ui, sans-serif;
+  /* Archivo Expanded. The width axis cannot be pinned in the next/font loader —
+     it is requested there via axes: ['wdth'] and set to 125 here. */
+  font-variation-settings: "wdth" 125;
+}
+
+/*
+ * Line-breaking. `balance` evens out the ragged right on short display text,
+ * which is what stops a headline dropping one stranded word onto its own line.
+ * `pretty` does the orphan/widow work on running text. Both degrade silently
+ * where unsupported, so neither is load-bearing.
+ */
+.type-hero,
+.type-h2,
+.type-h3 {
+  text-wrap: balance;
+}
+
+.type-body,
+.type-body-lg {
+  text-wrap: pretty;
+}
+
+.type-hero {
+  font-family: var(--font-archivo), "Arial Black", system-ui, sans-serif;
+  font-variation-settings: "wdth" 125;
+  /*
+   * [A8] — §4 specifies clamp(3rem, 9vw, 8.5rem). Measured against the actual
+   * typeface, neither end fits the approved §14 hero copy:
+   *
+   *   "EVERYWHERE." in Archivo Expanded 900 measures 455px at 48px (3rem).
+   *   At 320px the content box is 280px, so the word overflowed by 175px —
+   *   clipped and unreadable, not merely scrolled.
+   *   At 1920px the same word measures 1289px against a 1280px content box.
+   *
+   * Rescaled so the longest word in the approved copy fits at every required
+   * width (320/375/768/1024/1440/1920). The change at desktop is about 3% and
+   * is imperceptible; at 320px a smaller floor is the only way the word fits.
+   */
+  font-size: clamp(1.85rem, 9vw, 5.25rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  /* Backstop: future copy with a longer word breaks rather than clips. */
+  overflow-wrap: break-word;
+}
+
+.type-h2 {
+  font-family: var(--font-archivo), "Arial Black", system-ui, sans-serif;
+  font-variation-settings: "wdth" 125;
+  /* [A10] — re-proportioned against the client-approved hero. See globals
+     header note on the heading scale. §4's 5.5vw/5rem assumed an 8.5rem hero;
+     against a 5.25rem hero it made H2 larger than H1 below 400px. */
+  font-size: clamp(1.5rem, 5.6vw, 3.25rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+}
+
+.type-h3 {
+  font-family: var(--font-archivo), "Arial Black", system-ui, sans-serif;
+  font-variation-settings: "wdth" 125;
+  /* [A10] — holds a ~1.65 step below H2 at every width. */
+  font-size: clamp(1.3rem, 3.4vw, 1.95rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+}
+
+/*
+ * [A13] — a step between H2 and Hero, for the §09 close.
+ *
+ * §09 says "headline at hero scale". At true hero size the close overpowered
+ * the page: it is short, centred and sits on saturated red, all of which read
+ * heavier than the hero's longer ragged block at the same size. Client review
+ * rejected it. This lands at about 76% of hero.
+ */
+.type-display {
+  font-family: var(--font-archivo), "Arial Black", system-ui, sans-serif;
+  font-variation-settings: "wdth" 125;
+  font-size: clamp(1.75rem, 6.5vw, 4rem);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+/*
+ * [A13] — the editorial CTA.
+ *
+ * Kept deliberately larger than `.type-cta`, which is now button-sized. §6
+ * calls these "large editorial text links ... part of the layout" that read as
+ * chapter markers, and at button size the hero CTA came out *smaller* than the
+ * lead paragraph above it and simply blended into the copy. This always sits
+ * above body-large at every width, so the action is the largest thing under
+ * the headline.
+ */
+.type-cta-lg {
+  font-family: var(--font-archivo), "Arial Black", system-ui, sans-serif;
+  font-variation-settings: "wdth" 125;
+  font-size: clamp(1rem, 2.2vw, 1.625rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  /* A CTA is a label. It must never break across lines. */
+  white-space: nowrap;
+}
+
+/*
+ * [A20] — narrow the width axis below the desktop threshold.
+ *
+ * Archivo Expanded is about 20% wider than the normal width, and the longest
+ * approved CTA ("Explore our capabilities", 24 characters) simply does not fit
+ * a 320–375px line at a readable size: six of the eight editorial CTAs wrapped
+ * to two lines at 375px. Holding the expanded axis would have meant dropping
+ * to roughly 12px, below body text, which is not a CTA any more.
+ *
+ * Narrowing to wdth 100 on small screens buys back that 20% and keeps the
+ * label at 16px on one line. This is the reason to use a variable font.
+ */
+@media (max-width: 1023px) {
+  .type-cta-lg,
+  .type-cta {
+    font-variation-settings: "wdth" 100;
+    letter-spacing: 0.02em;
+  }
+
+  /*
+   * H3 for the same reason. At phone widths a single expanded word can be
+   * wider than its own column — "MARKETING" was breaking mid-word into
+   * "MARKETIN / G". The normal width recovers about 20% and lets these wrap
+   * between words as they should.
+   */
+  .type-h3 {
+    font-variation-settings: "wdth" 100;
+  }
+}
+
+.type-body-lg {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  font-size: clamp(1.125rem, 1.6vw, 1.5rem);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+.type-body {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.55;
+}
+
+.type-eyebrow {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  /* [A10] — §4 fixes this at 0.75rem. Held as the floor, with a small rise on
+     large viewports: at 12px against an 84px headline the label stopped
+     reading as part of the same system. Caps at 14px. */
+  font-size: clamp(0.75rem, 0.85vw, 0.875rem);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  /*
+   * No negative right margin here. Tracked-out uppercase does leave a trailing
+   * optical gap, but this class is also used for nav links, capability tags
+   * and rail labels, where a negative margin quietly skews flex spacing. Fix
+   * it per-instance if a specific block needs it, not globally.
+   */
+}
+
+.type-cta {
+  font-family: var(--font-archivo), "Arial Black", system-ui, sans-serif;
+  font-variation-settings: "wdth" 125;
+  /*
+   * [A13] — §4 caps this at 1.5rem, which put the CTA at exactly the same size
+   * as the body-large lead while being expanded, 700 weight and uppercase, so
+   * it read far heavier than everything around it. Re-proportioned against the
+   * amended heading scale: ~0.62 of H3, which is where a chapter-marker link
+   * sits without shouting.
+   */
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  /* A button label never wraps. */
+  white-space: nowrap;
+}
+
+/* Layout helpers */
+.shell {
+  width: 100%;
+  max-width: var(--max-content);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Screen-reader-only, for the aria-live count in §9's work filter and friends. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+} /* end @layer components */
+
+/* ---------------------------------------------------------------------------
+   Reveal defaults — §11 "No JavaScript", amended by [S1].
+
+   Deliberately UNLAYERED: these must beat any opacity utility, because they
+   are the contract that keeps the site readable without JavaScript.
+
+   Authored VISIBLE. JavaScript adds `js` to <html> before first paint and only
+   then are reveal targets hidden for their entrance. Authoring opacity:0 here
+   is the single most common way a motion-heavy site becomes a blank page for
+   crawlers and for anyone whose script fails.
+   --------------------------------------------------------------------------- */
+/*
+ * DANGER — `data-reveal` must only ever be emitted by the <Reveal> component,
+ * which owns the animation that brings it back. Hand-writing this attribute on
+ * section markup hides the content permanently whenever the animator is not
+ * mounted. That happened once: the §07 rows were authored with `data-reveal`
+ * during the static stage, before any motion existed, and the whole section
+ * rendered blank in the browser while every automated check still passed,
+ * because the copy was present in the DOM and merely transparent.
+ *
+ * If you are adding a reveal, use the component. Do not add the attribute.
+ */
+[data-reveal] {
+  opacity: 1;
+}
+
+.js [data-reveal] {
+  opacity: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   §03 stage details — [S1] and [S2] together.
+
+   Authored OPEN and in normal flow, so with JavaScript disabled every stage
+   paragraph is readable. Once scripted they collapse to one-open-at-a-time,
+   and at lg they lift out of flow into the reserved panel beneath the track —
+   expanding a node must never move the track, which would breach the CLS
+   budget. Collapsed rows have zero height, so the stacked absolute positions
+   never overlap.
+
+   §11 rule 2 — accordions animate grid-template-rows, never height.
+   --------------------------------------------------------------------------- */
+[data-stage-detail] {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 240ms ease;
+}
+
+[data-stage-detail] > * {
+  overflow: hidden;
+}
+
+.js [data-stage-detail] {
+  grid-template-rows: 0fr;
+}
+
+.js [data-stage-detail][data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .js [data-stage-detail] {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    /*
+     * Positioned against the <ol> (the track), not the <li>. The li is left
+     * static precisely so this resolves to the full track width — anchoring to
+     * the li would squeeze the paragraph into one fifth of the width and run
+     * it into the section CTA below.
+     */
+    width: 100%;
+    margin-top: 2rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   ProgressRail station labels — [A12].
+
+   Deliberately plain CSS rather than Tailwind variants: an arbitrary
+   `[@media(min-width:1700px)]:opacity-100` cannot be sorted among Tailwind's
+   own breakpoints, so it lost to a plain `opacity-0` on source order alone.
+   The two-attribute selector below wins on specificity, which does not depend
+   on generated ordering.
+   --------------------------------------------------------------------------- */
+[data-rail-label] {
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.group:hover > [data-rail-label],
+.group:focus-visible > [data-rail-label] {
+  opacity: 1;
+}
+
+/* Only past this width does the content column clear the rail, so only here
+   can the active station name sit out in the open as §6 describes. */
+@media (min-width: 1700px) {
+  [data-rail-label][data-active="true"] {
+    opacity: 1;
+    padding-inline: 0;
+    background-color: transparent;
+    color: var(--train-cream);
+  }
+
+  [data-rail-label][data-active="true"][data-on-light="true"] {
+    color: var(--train-black);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion — §11. Everything lands in its final state. Nothing hidden,
+   nothing mid-animation.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .js [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "train-website",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": [
+        "train-website/node_modules/next/dist/bin/next",
+        "dev",
+        "train-website"
+      ],
+      "port": 3000
+    }
+  ]
+}
