@@ -30,7 +30,7 @@ export function ProgressRail({ sections }: { sections: HomeSection[] }) {
    * used to run its own IntersectionObserver; it now shares the provider's
    * with the back-to-top button, which is what §6 asked for.
    */
-  const { isNavHidden, activeId, activeSurface } = useScroll();
+  const { isNavHidden, isPastHero, activeId, activeSurface } = useScroll();
   const onLight = activeSurface === "cream";
   const resolvedActiveId = activeId || sections[0]?.id || "";
 
@@ -153,9 +153,15 @@ export function ProgressRail({ sections }: { sections: HomeSection[] }) {
           // §6 specifies 2px. Raised to 4px on client review: at 2px the fill
           // was too slight to read as progress on a phone.
           "fixed inset-x-0 z-40 h-1 lg:hidden",
-          "transition-[transform,background-color] duration-[180ms] ease-out",
+          "transition-[transform,background-color,opacity] duration-[180ms] ease-out",
           // The unfilled track, tinted against whatever is behind it.
           onLight ? "bg-train-black/15" : "bg-train-cream/25",
+          // Held back over the hero. At zero progress the track was still a
+          // full-width line across the top of the opening screen, which read
+          // as a stray rule rather than as progress. It fades in once there
+          // is progress to show — the same threshold the nav and the
+          // back-to-top button use.
+          isPastHero ? "opacity-100" : "opacity-0",
           isNavHidden && "-translate-y-[var(--nav-h)]",
         )}
         style={{ top: "var(--nav-h)" }}
