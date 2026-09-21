@@ -199,19 +199,38 @@ export function Mission({
               })}
             </svg>
 
-            {/* Mobile — the same cycle, compact and vertical. */}
-            <ol className="flex flex-col gap-3 md:hidden" aria-hidden="true">
-              {stages.map((stage, i) => (
-                <li key={stage.slug} className="flex items-center gap-4">
+            {/*
+              Mobile — the same cycle, compact and vertical (§12).
+
+              The closing row matters: on desktop the circle shows the loop,
+              but a plain vertical list reads as four one-off steps, and D4
+              rests on the engine feeding *back* into Attract. It gets its own
+              row, connected by the rail down the dot column — previously it
+              was appended to the last stage's line and read as part of that
+              stage's label.
+            */}
+            <ol
+              className="relative flex flex-col gap-3 md:hidden"
+              aria-hidden="true"
+            >
+              {/* Vertical rail through the dot column, stopping at the return. */}
+              <span className="absolute bottom-3 left-1 top-2 w-px -translate-x-1/2 bg-train-red/30" />
+
+              {stages.map((stage) => (
+                <li key={stage.slug} className="relative flex items-center gap-4">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-train-red" />
                   <span className="type-eyebrow">{stage.name}</span>
-                  {i === stages.length - 1 ? (
-                    <span className="type-eyebrow text-train-grey-700">
-                      ↻ back to {stages[0]?.name}
-                    </span>
-                  ) : null}
                 </li>
               ))}
+
+              <li className="relative flex items-center gap-4 pt-1">
+                <span className="grid w-2 shrink-0 place-items-center text-train-red">
+                  ↻
+                </span>
+                <span className="type-eyebrow text-train-grey-700">
+                  Back to {stages[0]?.name}
+                </span>
+              </li>
             </ol>
           </div>
 
