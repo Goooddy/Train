@@ -20,16 +20,49 @@ import { ease, revealTrigger } from "@/lib/motion";
  * Rendered complete. Stage 6 draws it once on entering view; under reduced
  * motion and with JavaScript disabled it is simply already drawn.
  */
-const RADIUS = 132;
-const CENTRE = 180;
+/*
+ * The viewBox is wider than it is tall to leave room for the side labels.
+ * Build and Reinvest sit at the east and west points, so their names go
+ * *beside* their dots rather than above them — stacked above, they printed
+ * across the circle's own stroke.
+ */
+const VIEW_W = 440;
+const VIEW_H = 360;
+const CENTRE_X = VIEW_W / 2;
+const CENTRE_Y = VIEW_H / 2;
+const RADIUS = 120;
 
 function pointOnCircle(index: number, total: number) {
   // Start at the top and go clockwise.
   const angle = (index / total) * Math.PI * 2 - Math.PI / 2;
   return {
-    x: CENTRE + RADIUS * Math.cos(angle),
-    y: CENTRE + RADIUS * Math.sin(angle),
+    x: CENTRE_X + RADIUS * Math.cos(angle),
+    y: CENTRE_Y + RADIUS * Math.sin(angle),
   };
+}
+
+/**
+ * Place a label relative to its node, derived from where the node actually
+ * sits rather than from its index, so this keeps working if the number of
+ * engine stages ever changes.
+ */
+function labelPlacement(x: number, y: number) {
+  const GAP = 18;
+
+  if (x > CENTRE_X + 1) {
+    return { x: x + GAP, y, anchor: "start", baseline: "middle" } as const;
+  }
+  if (x < CENTRE_X - 1) {
+    return { x: x - GAP, y, anchor: "end", baseline: "middle" } as const;
+  }
+  // Top and bottom nodes keep their label stacked clear of the stroke.
+  const above = y < CENTRE_Y;
+  return {
+    x,
+    y: above ? y - 24 : y + 30,
+    anchor: "middle",
+    baseline: "auto",
+  } as const;
 }
 
 export function Mission({
@@ -118,13 +151,13 @@ export function Mission({
           {/* Desktop — the closed circle. */}
           <div role="img" aria-label={loopLabel}>
             <svg
-              viewBox="0 0 360 360"
-              className="mx-auto hidden h-auto w-full max-w-[360px] text-train-black md:block"
+              viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+              className="mx-auto hidden h-auto w-full max-w-[440px] text-train-black md:block"
               aria-hidden="true"
             >
               <circle
-                cx={CENTRE}
-                cy={CENTRE}
+                cx={CENTRE_X}
+                cy={CENTRE_Y}
                 r={RADIUS}
                 fill="none"
                 stroke="var(--train-red)"
@@ -133,6 +166,7 @@ export function Mission({
               />
               {stages.map((stage, i) => {
                 const { x, y } = pointOnCircle(i, stages.length);
+                const label = labelPlacement(x, y);
                 return (
                   <g key={stage.slug}>
                     <circle
@@ -144,12 +178,13 @@ export function Mission({
                       style={{ transformBox: "fill-box", transformOrigin: "center" }}
                     />
                     <text
-                      x={x}
-                      y={i === 0 ? y - 22 : i === 2 ? y + 26 : y - 22}
+                      x={label.x}
+                      y={label.y}
                       fill="currentColor"
                       fontSize="13"
                       fontWeight={600}
-                      textAnchor="middle"
+                      textAnchor={label.anchor}
+                      dominantBaseline={label.baseline}
                       style={{
                         fontFamily:
                           "var(--font-montserrat), system-ui, sans-serif",

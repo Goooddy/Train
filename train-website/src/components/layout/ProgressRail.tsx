@@ -150,14 +150,28 @@ export function ProgressRail({ sections }: { sections: HomeSection[] }) {
       <div
         aria-hidden="true"
         className={cn(
-          "fixed inset-x-0 z-40 h-0.5 bg-train-grey-300/30 lg:hidden",
-          "transition-transform duration-[180ms] ease-out",
+          // §6 specifies 2px. Raised to 4px on client review: at 2px the fill
+          // was too slight to read as progress on a phone.
+          "fixed inset-x-0 z-40 h-1 lg:hidden",
+          "transition-[transform,background-color] duration-[180ms] ease-out",
+          // The unfilled track, tinted against whatever is behind it.
+          onLight ? "bg-train-black/15" : "bg-train-cream/25",
           isNavHidden && "-translate-y-[var(--nav-h)]",
         )}
         style={{ top: "var(--nav-h)" }}
       >
+        {/*
+          §6 fills this red throughout. Red is invisible on the red sections
+          and only 2.4:1 on black, so the fill follows the surface: red on
+          cream (5.9:1), yellow on black (12.1:1), cream on red (5.9:1).
+        */}
         <span
-          className="block h-full origin-left bg-train-red"
+          className={cn(
+            "block h-full origin-left transition-colors duration-[180ms]",
+            activeSurface === "cream" && "bg-train-red",
+            activeSurface === "black" && "bg-train-yellow",
+            activeSurface === "red" && "bg-train-cream",
+          )}
           style={{ transform: "scaleX(var(--scroll-progress, 0))" }}
         />
       </div>
